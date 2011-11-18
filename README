@@ -13,7 +13,8 @@ DESCRIPTION
 
       DBD::mysqlPPrawSjis is a Pure Perl MySQL dirver for the Perl5
       Database Interface(DBI) for raw ShiftJIS data.
-      This software is made based on Hiroyuki OYAMA's DBD::mysqlPP.
+      This software is made based on DBD::mysqlPP of Hiroyuki OYAMA
+      and Takuya Tsuchida.
 
       Using this software and Sjis software, you can store ShiftJIS
       literal into MySQL database without code conversion at all.

@@ -5,7 +5,7 @@ use DBI;
 use Carp;
 use vars qw($VERSION $err $errstr $state $drh);
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 $err = 0;
 $errstr = '';
 $state = undef;
@@ -128,6 +128,7 @@ sub connect
 	}
 
 # DBD::mysqlPPrawSjis (2 of 5)
+	return $dbh;
 
 	my $sth = $dbh->prepare(q{SHOW VARIABLES LIKE 'character\\_set\\_%'});
 	$sth->execute();
@@ -268,6 +269,7 @@ sub quote
 		while ($statement =~ /\G ( [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )/gsx) {
 			push @statement,
 				{
+					# ref. mysql_real_escape_string()
 					qq(\\)   => q(\\\\),
 					qq(\0)   => q(\\0),
 					qq(\n)   => q(\\n),
@@ -302,9 +304,9 @@ sub _count_param
 		my $num = 0;
 
 		while ($statement =~ /\G (
-			' (?: \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )*? ' |
-			" (?: \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )*? " |
-			  (?:       [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
+			' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
+			" (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
+			  (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
 		)/gsx) {
 			$num++ if $1 eq '?';
 		}
@@ -505,16 +507,52 @@ sub execute
 		my $dbh = $sth->{Database};
 		my @statement = ();
 		my $i = 0;
+
+		# LIMIT m,n [Li][Ii][Mm][Ii][Tt] for ignorecase on ShiftJIS (Can't use /LIMIT/i)
+		# LIMIT n
+		# OFFSET m
+
 		while ($statement =~ /\G (
-			' (?: \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )*? ' |
-			" (?: \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )*? " |
-			  (?:       [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
+			' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
+			" (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
+			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [?]    )                    |
+			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [0-9]+ \s* , \s* [?]    )                    |
+			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [0-9]+ )                    |
+			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] )                                        |
+			  (?: \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ [?] )                                    |
+			  (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
 		)/gsx) {
-			if ($1 eq '?') {
+			my $element = $1;
+			if (($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] \s* , \s* [?] \z/x) and
+				exists $params->[$i+1] and
+				($params->[$i+0] =~ /^[0-9]+$/) and
+				($params->[$i+1] =~ /^[0-9]+$/)
+			) {
+				$element =~ s{[?]}{$params->[$i++]}e;
+				$element =~ s{[?]}{$params->[$i++]}e;
+				push @statement, $element;
+			}
+			elsif (
+				($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ /x) and
+				exists $params->[$i] and
+				($params->[$i] =~ /^[0-9]+$/)
+			) {
+				$element =~ s{[?]}{$params->[$i++]}e;
+				push @statement, $element;
+			}
+			elsif (
+				($element =~ /\A \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ /x) and
+				exists $params->[$i] and
+				($params->[$i] =~ /^[0-9]+$/)
+			) {
+				$element =~ s{[?]}{$params->[$i++]}e;
+				push @statement, $element;
+			}
+			elsif (($element eq '?') and exists $params->[$i]) {
 				push @statement, $dbh->quote($params->[$i++]);
 			}
 			else {
-				push @statement, $1;
+				push @statement, $element;
 			}
 		}
 		$statement = join '', @statement;
@@ -628,7 +666,6 @@ sub STORE
 sub DESTROY
 {
 	my $dbh = shift;
-
 }
 
 
@@ -886,7 +923,7 @@ with ActivePerl v5.6.1 built for MSWin32-x86-multi-thread Binary build 638 Built
 with ActivePerl v5.8.9 built for MSWin32-x86-multi-thread Binary build 825 [288577] Built Dec 14 2008 21:07:41
 with ActivePerl v5.10.0 built for MSWin32-x86-multi-thread Binary build 1004 [287188] Built Sep  3 2008 13:16:37
 
-=item * Windows XP Service Pack 2
+=item * Windows XP Service Pack 2, Service Pack 3
 
 with ActivePerl version 5.005_03 built for MSWin32-x86-object Binary build 522 Built 09:52:28 Nov  2 1999
 with ActivePerl v5.6.1 built for MSWin32-x86-multi-thread Binary build 638 Built Apr 13 2004 19:24:21
@@ -1188,10 +1225,11 @@ INABA Hitoshi E<lt>ina@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2002 Hiroyuki OYAMA. Japan. All rights reserved.
-ShiftJIS support 2005,2008,2009 INABA Hitoshi.
+Copyright (C) 2002-2011 Hiroyuki OYAMA. Japan. All rights reserved.
+Copyright (C) 2011 Takuya Tsuchida
+ShiftJIS support 2005,2008,2009,2011 INABA Hitoshi
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 =cut

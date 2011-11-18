@@ -3,6 +3,7 @@ Changes
 MANIFEST
 META.yml
 Makefile.PL
+pMakefile.PL
 README
 test.pl
 mysql_sjistest.pl

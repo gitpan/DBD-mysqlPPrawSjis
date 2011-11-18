@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::mysqlPPrawSjis.
 
+0.06  Mon Nov 19 00:00:00 JST 2011
+    - No escape parameter(s) of LIMIT n and LIMIT m,n.
+    - No escape parameter of OFFSET m.
+      Inspired from DBD::mysqlPP-0.07.
+
 0.05  Wed Apr  1 00:00:00 JST 2009
     - Raw ShiftJIS version based on DBD::mysqlPP.
     - Avoid warning of perl -cw.
