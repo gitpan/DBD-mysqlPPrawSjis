@@ -1,9 +1,10 @@
 DBD/mysqlPPrawSjis.pm
 Changes
-MANIFEST
-META.yml
 Makefile.PL
 pMakefile.PL
+MANIFEST
 README
-test.pl
-mysql_sjistest.pl
+META.yml
+Test/Simply.pm
+t/001_test.pl
+xt/001_mysql_sjistest.pl

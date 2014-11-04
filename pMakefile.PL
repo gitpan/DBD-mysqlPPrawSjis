@@ -126,7 +126,7 @@ for my $target (@ARGV) {
             }
         }
 
-        # install *.pl, *.bat, *.exe and *.com files to /Perl/bin
+        # install *.pl, *.bat, *.exe, and *.com files to /Perl/bin
         my($perl_bin) = $^X =~ /^(.*)\\[^\\]*$/;
         for (grep m/ \. (?: pl | bat | exe | com ) \z /xmsi, @file) {
             next if m/(?: Makefile | pMakefile | test ) \.pl  $/xmsi;
@@ -206,7 +206,7 @@ for my $target (@ARGV) {
 #-----------------------------------------------------------------------------
 # Sunday December 21, 2008 07:38 PM 
 # Fixing world writable files in tarball before upload to CPAN [ #38127 ]
-# http://use.perl.org/~bart/journal/38127
+# http://use.perl.org/~bart/journal/38127 (dead link)
 #-----------------------------------------------------------------------------
 #                   $tar->add_files("$tardir/$file");
 #-----------------------------------------------------------------------------

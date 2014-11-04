@@ -5,7 +5,7 @@ use DBI;
 use Carp;
 use vars qw($VERSION $err $errstr $state $drh);
 
-$VERSION = '0.08';
+$VERSION = '0.09';
 $err = 0;
 $errstr = '';
 $state = undef;
@@ -14,74 +14,74 @@ $drh = undef;
 
 sub driver
 {
-	return $drh if $drh;
+    return $drh if $drh;
 
-	my $class = shift;
-	my $attr  = shift;
-	$class .= '::dr';
+    my $class = shift;
+    my $attr  = shift;
+    $class .= '::dr';
 
-	$drh = DBI::_new_drh($class, {
-		Name        => 'mysqlPPrawSjis',
-		Version     => $VERSION,
-		Err         => \$DBD::mysqlPPrawSjis::err,
-		Errstr      => \$DBD::mysqlPPrawSjis::errstr,
-		State       => \$DBD::mysqlPPrawSjis::state,
-		Attribution => 'DBD::mysqlPPrawSjis by Hiroyuki OYAMA and ShiftJIS support by INABA Hitoshi',
-	}, {});
+    $drh = DBI::_new_drh($class, {
+        Name        => 'mysqlPPrawSjis',
+        Version     => $VERSION,
+        Err         => \$DBD::mysqlPPrawSjis::err,
+        Errstr      => \$DBD::mysqlPPrawSjis::errstr,
+        State       => \$DBD::mysqlPPrawSjis::state,
+        Attribution => 'DBD::mysqlPPrawSjis by Hiroyuki OYAMA and ShiftJIS support by INABA Hitoshi',
+    }, {});
 }
 
 
 sub _parse_dsn
 {
-	my $class = shift;
-	my ($dsn, $args) = @_;
-	my($hash, $var, $val);
-	return if ! defined $dsn;
+    my $class = shift;
+    my ($dsn, $args) = @_;
+    my($hash, $var, $val);
+    return if ! defined $dsn;
 
-	while (length $dsn) {
-		if ($dsn =~ /([^:;]*)[:;](.*)/) {
-			$val = $1;
-			$dsn = $2;
-		}
-		else {
-			$val = $dsn;
-			$dsn = '';
-		}
-		if ($val =~ /([^=]*)=(.*)/) {
-			$var = $1;
-			$val = $2;
-			if ($var eq 'hostname' || $var eq 'host') {
-				$hash->{'host'} = $val;
-			}
-			elsif ($var eq 'db' || $var eq 'dbname') {
-				$hash->{'database'} = $val;
-			}
-			else {
-				$hash->{$var} = $val;
-			}
-		}
-		else {
-			for $var (@$args) {
-				if (!defined($hash->{$var})) {
-					$hash->{$var} = $val;
-					last;
-				}
-			}
-		}
-	}
+    while (length $dsn) {
+        if ($dsn =~ /([^:;]*)[:;](.*)/) {
+            $val = $1;
+            $dsn = $2;
+        }
+        else {
+            $val = $dsn;
+            $dsn = '';
+        }
+        if ($val =~ /([^=]*)=(.*)/) {
+            $var = $1;
+            $val = $2;
+            if ($var eq 'hostname' || $var eq 'host') {
+                $hash->{'host'} = $val;
+            }
+            elsif ($var eq 'db' || $var eq 'dbname') {
+                $hash->{'database'} = $val;
+            }
+            else {
+                $hash->{$var} = $val;
+            }
+        }
+        else {
+            for $var (@$args) {
+                if (!defined($hash->{$var})) {
+                    $hash->{$var} = $val;
+                    last;
+                }
+            }
+        }
+    }
 
 # DBD::mysqlPPrawSjis (1 of 5)
-	$hash->{'host'} = '127.0.0.1' unless defined $hash->{'host'};
+    $hash->{'host'} = '127.0.0.1' unless defined $hash->{'host'};
 
-	return $hash;
+    return $hash;
 }
 
 
 sub _parse_dsn_host
 {
-	my($class, $dsn) = @_;
-	my $hash = $class->_parse_dsn($dsn, ['host', 'port']);
-	($hash->{'host'}, $hash->{'port'});
+    my($class, $dsn) = @_;
+    my $hash = $class->_parse_dsn($dsn, ['host', 'port']);
+    ($hash->{'host'}, $hash->{'port'});
 }
 
 
@@ -97,151 +97,151 @@ use strict;
 
 sub connect
 {
-	my $drh = shift;
-	my ($dsn, $user, $password, $attrhash) = @_;
+    my $drh = shift;
+    my ($dsn, $user, $password, $attrhash) = @_;
 
-	my $data_source_info = DBD::mysqlPPrawSjis->_parse_dsn(
-		$dsn, ['database', 'host', 'port'],
-	);
-	$user     ||= '';
-	$password ||= '';
+    my $data_source_info = DBD::mysqlPPrawSjis->_parse_dsn(
+        $dsn, ['database', 'host', 'port'],
+    );
+    $user     ||= '';
+    $password ||= '';
 
-	my $dbh = DBI::_new_dbh($drh, {
-		Name         => $dsn,
-		USER         => $user,
-		CURRENT_USRE => $user,
-	}, {});
-	eval {
-		my $mysql = Net::MySQL->new(
-			hostname => $data_source_info->{host},
-			port     => $data_source_info->{port},
-			database => $data_source_info->{database},
-			user     => $user,
-			password => $password,
-			debug    => $attrhash->{protocol_dump},
-		);
-		$dbh->STORE(mysqlpprawsjis_connection => $mysql);
-		$dbh->STORE(thread_id => $mysql->{server_thread_id});
-	};
-	if ($@) {
-		return $dbh->DBI::set_err(1, $@);
-	}
+    my $dbh = DBI::_new_dbh($drh, {
+        Name         => $dsn,
+        USER         => $user,
+        CURRENT_USRE => $user,
+    }, {});
+    eval {
+        my $mysql = Net::MySQL->new(
+            hostname => $data_source_info->{host},
+            port     => $data_source_info->{port},
+            database => $data_source_info->{database},
+            user     => $user,
+            password => $password,
+            debug    => $attrhash->{protocol_dump},
+        );
+        $dbh->STORE(mysqlpprawsjis_connection => $mysql);
+        $dbh->STORE(thread_id => $mysql->{server_thread_id});
+    };
+    if ($@) {
+        return $dbh->DBI::set_err(1, $@);
+    }
 
 # DBD::mysqlPPrawSjis (2 of 5)
-	return $dbh;
+    return $dbh;
 
-	my $sth = $dbh->prepare(q{SHOW VARIABLES LIKE 'character\\_set\\_%'});
-	$sth->execute();
-	my %character_set = ();
-	while(my($variable_name,$value) = $sth->fetchrow_array()){
-		$character_set{$variable_name} = $value;
-	}
-	if (($character_set{'character_set_server'}   eq 'cp932') and
-	    ($character_set{'character_set_database'} eq 'cp932') and
-	    ($character_set{'character_set_client'}   eq 'cp932')
-	) {
-	}
-	elsif (($character_set{'character_set_server'}   eq 'sjis') and
-	       ($character_set{'character_set_database'} eq 'sjis') and
-	       ($character_set{'character_set_client'}   eq 'sjis')
-	) {
-	}
-	elsif ($character_set{'character_set_server'} ne 'cp932') {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_server' is not 'cp932').\n");
-	}
-	elsif ($character_set{'character_set_database'} ne 'cp932') {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_database' is not 'cp932').\n");
-	}
-	elsif ($character_set{'character_set_client'} ne 'cp932') {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_client' is not 'cp932').\n");
-	}
+    my $sth = $dbh->prepare(q{SHOW VARIABLES LIKE 'character\\_set\\_%'});
+    $sth->execute();
+    my %character_set = ();
+    while(my($variable_name,$value) = $sth->fetchrow_array()){
+        $character_set{$variable_name} = $value;
+    }
+    if (($character_set{'character_set_server'}   eq 'cp932') and
+        ($character_set{'character_set_database'} eq 'cp932') and
+        ($character_set{'character_set_client'}   eq 'cp932')
+    ) {
+    }
+    elsif (($character_set{'character_set_server'}   eq 'sjis') and
+           ($character_set{'character_set_database'} eq 'sjis') and
+           ($character_set{'character_set_client'}   eq 'sjis')
+    ) {
+    }
+    elsif ($character_set{'character_set_server'} ne 'cp932') {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_server' is not 'cp932').\n");
+    }
+    elsif ($character_set{'character_set_database'} ne 'cp932') {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_database' is not 'cp932').\n");
+    }
+    elsif ($character_set{'character_set_client'} ne 'cp932') {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Variable 'character_set_client' is not 'cp932').\n");
+    }
 
-	eval {
-		$dbh->do(q{DROP TABLE test_character_set});
-	};
-	$dbh->do(q{CREATE TABLE test_character_set (id INT, c_cp932 TEXT)});
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 1, 'ab');					# <LATIN SMALL LETTER A> <LATIN SMALL LETTER B>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 2, '\\');					# 0x5C
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 3, "\xB6\xC5");			# <HALFWIDTH KATAKANA LETTER KA> <HALFWIDTH KATAKANA LETTER NA>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 4, "\x83\x4A\x83\x69");	# <KATAKANA LETTER KA> <KATAKANA LETTER NA>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 5, "\x81\x60\x81\x61");	# <FULLWIDTH TILDE> <PARALLEL TO>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 6, "\x87\x40\x87\x62");	# <CIRCLED DIGIT ONE> <SQUARE MEETORU>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 7, "\xFA\x42\xFB\xFC");	# <SMALL ROMAN NUMERAL THREE> <CJK UNIFIED IDEOGRAPH>
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 8, "\xF8\x9F");			# 0xF89F
+    eval {
+        $dbh->do(q{DROP TABLE test_character_set});
+    };
+    $dbh->do(q{CREATE TABLE test_character_set (id INT, c_cp932 TEXT)});
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 1, 'ab');					# <LATIN SMALL LETTER A> <LATIN SMALL LETTER B>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 2, '\\');					# 0x5C
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 3, "\xB6\xC5");			# <HALFWIDTH KATAKANA LETTER KA> <HALFWIDTH KATAKANA LETTER NA>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 4, "\x83\x4A\x83\x69");	# <KATAKANA LETTER KA> <KATAKANA LETTER NA>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 5, "\x81\x60\x81\x61");	# <FULLWIDTH TILDE> <PARALLEL TO>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 6, "\x87\x40\x87\x62");	# <CIRCLED DIGIT ONE> <SQUARE MEETORU>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 7, "\xFA\x42\xFB\xFC");	# <SMALL ROMAN NUMERAL THREE> <CJK UNIFIED IDEOGRAPH>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 8, "\xF8\x9F");			# 0xF89F
 
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {},  9, "\x00");				# NUL
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 10, "\x0A");				# LF
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 11, "\x0D");				# CR
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 12, "\x1A");				# Ctrl+Z
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 13, "\x5C");				# \
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 14, "\x27");				# '
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 15, "\x22");				# "
-	$dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 16, "\x83\x5C");			# <KATAKANA LETTER SO>
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {},  9, "\x00");				# NUL
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 10, "\x0A");				# LF
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 11, "\x0D");				# CR
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 12, "\x1A");				# Ctrl+Z
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 13, "\x5C");				# \
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 14, "\x27");				# '
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 15, "\x22");				# "
+    $dbh->do(q{INSERT INTO test_character_set (id,c_cp932) VALUES (?,?)}, {}, 16, "\x83\x5C");			# <KATAKANA LETTER SO>
 
-	my $sth2 = $dbh->prepare(q{SELECT id, c_cp932 FROM test_character_set});
-	$sth2->execute();
-	my %c_cp932 = ();
-	while(my($id,$c_cp932) = $sth2->fetchrow_array()){
-		$c_cp932{$id} = $c_cp932;
-	}
+    my $sth2 = $dbh->prepare(q{SELECT id, c_cp932 FROM test_character_set});
+    $sth2->execute();
+    my %c_cp932 = ();
+    while(my($id,$c_cp932) = $sth2->fetchrow_array()){
+        $c_cp932{$id} = $c_cp932;
+    }
 
-	if ($c_cp932{1} ne "\x61\x62") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('61','62') can't select such as).\n");
-	}
-	if ($c_cp932{2} ne "\x5C") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('5C') can't select such as).\n");
-	}
-	if ($c_cp932{3} ne "\xB6\xC5") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('B6','C5') can't select such as).\n");
-	}
-	if ($c_cp932{4} ne "\x83\x4A\x83\x69") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('834A','8369') can't select such as).\n");
-	}
-	if ($c_cp932{5} ne "\x81\x60\x81\x61") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('8160','8161') can't select such as).\n");
-	}
-	if ($c_cp932{6} ne "\x87\x40\x87\x62") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('8740','8762') can't select such as).\n");
-	}
-	if ($c_cp932{7} ne "\xFA\x42\xFB\xFC") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('FA42','FBFC') can't select such as).\n");
-	}
-	if ($c_cp932{8} ne "\xF8\x9F") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('F89F') can't select such as).\n");
-	}
+    if ($c_cp932{1} ne "\x61\x62") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('61','62') can't select such as).\n");
+    }
+    if ($c_cp932{2} ne "\x5C") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('5C') can't select such as).\n");
+    }
+    if ($c_cp932{3} ne "\xB6\xC5") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('B6','C5') can't select such as).\n");
+    }
+    if ($c_cp932{4} ne "\x83\x4A\x83\x69") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('834A','8369') can't select such as).\n");
+    }
+    if ($c_cp932{5} ne "\x81\x60\x81\x61") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('8160','8161') can't select such as).\n");
+    }
+    if ($c_cp932{6} ne "\x87\x40\x87\x62") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('8740','8762') can't select such as).\n");
+    }
+    if ($c_cp932{7} ne "\xFA\x42\xFB\xFC") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('FA42','FBFC') can't select such as).\n");
+    }
+    if ($c_cp932{8} ne "\xF8\x9F") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('F89F') can't select such as).\n");
+    }
 
-	if ($c_cp932{9} ne "\x00") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('00') can't select such as).\n");
-	}
-	if ($c_cp932{10} ne "\x0A") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('0A') can't select such as).\n");
-	}
-	if ($c_cp932{11} ne "\x0D") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('0D') can't select such as).\n");
-	}
-	if ($c_cp932{12} ne "\x1A") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('1A') can't select such as).\n");
-	}
-	if ($c_cp932{13} ne "\x5C") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('5C') can't select such as).\n");
-	}
-	if ($c_cp932{14} ne "\x27") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('27') can't select such as).\n");
-	}
-	if ($c_cp932{15} ne "\x22") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('22') can't select such as).\n");
-	}
-	if ($c_cp932{16} ne "\x83\x5C") {
-		return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('835C') can't select such as).\n");
-	}
+    if ($c_cp932{9} ne "\x00") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('00') can't select such as).\n");
+    }
+    if ($c_cp932{10} ne "\x0A") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('0A') can't select such as).\n");
+    }
+    if ($c_cp932{11} ne "\x0D") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('0D') can't select such as).\n");
+    }
+    if ($c_cp932{12} ne "\x1A") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('1A') can't select such as).\n");
+    }
+    if ($c_cp932{13} ne "\x5C") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('5C') can't select such as).\n");
+    }
+    if ($c_cp932{14} ne "\x27") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('27') can't select such as).\n");
+    }
+    if ($c_cp932{15} ne "\x22") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('22') can't select such as).\n");
+    }
+    if ($c_cp932{16} ne "\x83\x5C") {
+        return $dbh->DBI::set_err(1, "Can't handle cp932(Inserted HEX('835C') can't select such as).\n");
+    }
 
-	return $dbh;
+    return $dbh;
 }
 
 
 sub data_sources
 {
-	return ("dbi:mysqlPPrawSjis:");
+    return ("dbi:mysqlPPrawSjis:");
 }
 
 
@@ -259,213 +259,213 @@ use strict;
 # Patterns referred to 'mysql_sub_escape_string()' of libmysql.c
 sub quote
 {
-	my $dbh = shift;
-	my ($statement, $type) = @_;
-	return 'NULL' unless defined $statement;
+    my $dbh = shift;
+    my ($statement, $type) = @_;
+    return 'NULL' unless defined $statement;
 
 # DBD::mysqlPPrawSjis (3 of 5)
-	if (1) {
-		my @statement = ();
-		while ($statement =~ /\G ( [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )/gsx) {
-			push @statement,
-				{
-					# ref. mysql_real_escape_string()
-					qq(\\)   => q(\\\\),
-					qq(\0)   => q(\\0),
-					qq(\n)   => q(\\n),
-					qq(\r)   => q(\\r),
-					qq(')    => q(\\'),
-					qq(")    => q(\\"),
-					qq(\x1A) => q(\\Z),
-				}->{$1} || $1;
-		}
-		$statement = join '', @statement;
-	}
-	else {
-		for ($statement) {
-			s/\\/\\\\/g;
-			s/\0/\\0/g;
-			s/\n/\\n/g;
-			s/\r/\\r/g;
-			s/'/\\'/g;
-			s/"/\\"/g;
-			s/\x1a/\\Z/g;
-		}
-	}
-	return "'$statement'";
+    if (1) {
+        my @statement = ();
+        while ($statement =~ /\G ( [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )/gsx) {
+            push @statement,
+                {
+                    # ref. mysql_real_escape_string()
+                    qq(\\)   => q(\\\\),
+                    qq(\0)   => q(\\0),
+                    qq(\n)   => q(\\n),
+                    qq(\r)   => q(\\r),
+                    qq(')    => q(\\'),
+                    qq(")    => q(\\"),
+                    qq(\x1A) => q(\\Z),
+                }->{$1} || $1;
+        }
+        $statement = join '', @statement;
+    }
+    else {
+        for ($statement) {
+            s/\\/\\\\/g;
+            s/\0/\\0/g;
+            s/\n/\\n/g;
+            s/\r/\\r/g;
+            s/'/\\'/g;
+            s/"/\\"/g;
+            s/\x1a/\\Z/g;
+        }
+    }
+    return "'$statement'";
 }
 
 
 sub _count_param
 {
 # DBD::mysqlPPrawSjis (4 of 5)
-	if (1) {
-		my $statement = shift;
-		my $num = 0;
+    if (1) {
+        my $statement = shift;
+        my $num = 0;
 
-		while ($statement =~ /\G (
-			' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
-			" (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
-			  (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
-		)/gsx) {
-			$num++ if $1 eq '?';
-		}
-		return $num;
-	}
-	else {
-		my @statement = split //, shift;
-		my $num = 0;
+        while ($statement =~ /\G (
+            ' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
+            " (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
+              (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
+        )/gsx) {
+            $num++ if $1 eq '?';
+        }
+        return $num;
+    }
+    else {
+        my @statement = split //, shift;
+        my $num = 0;
 
-		while (defined(my $c = shift @statement)) {
-			if ($c eq '"' || $c eq "'") {
-				my $end = $c;
-				while (defined(my $c = shift @statement)) {
-					last if $c eq $end;
-					@statement = splice @statement, 2 if $c eq '\\';
-				}
-			}
-			elsif ($c eq '?') {
-				$num++;
-			}
-		}
-		return $num;
-	}
+        while (defined(my $c = shift @statement)) {
+            if ($c eq '"' || $c eq "'") {
+                my $end = $c;
+                while (defined(my $c = shift @statement)) {
+                    last if $c eq $end;
+                    @statement = splice @statement, 2 if $c eq '\\';
+                }
+            }
+            elsif ($c eq '?') {
+                $num++;
+            }
+        }
+        return $num;
+    }
 }
 
 
 sub prepare
 {
-	my $dbh = shift;
-	my ($statement, @attribs) = @_;
+    my $dbh = shift;
+    my ($statement, @attribs) = @_;
 
-	my $sth = DBI::_new_sth($dbh, {
-		Statement => $statement,
-	});
-	$sth->STORE(mysqlpprawsjis_handle => $dbh->FETCH('mysqlpprawsjis_connection'));
-	$sth->STORE(mysqlpprawsjis_params => []);
-	$sth->STORE(NUM_OF_PARAMS => _count_param($statement));
-	$sth;
+    my $sth = DBI::_new_sth($dbh, {
+        Statement => $statement,
+    });
+    $sth->STORE(mysqlpprawsjis_handle => $dbh->FETCH('mysqlpprawsjis_connection'));
+    $sth->STORE(mysqlpprawsjis_params => []);
+    $sth->STORE(NUM_OF_PARAMS => _count_param($statement));
+    $sth;
 }
 
 
 sub commit
 {
-	my $dbh = shift;
-	if ($dbh->FETCH('Warn')) {
-		warn 'Commit ineffective while AutoCommit is on';
-	}
-	1;
+    my $dbh = shift;
+    if ($dbh->FETCH('Warn')) {
+        warn 'Commit ineffective while AutoCommit is on';
+    }
+    1;
 }
 
 
 sub rollback
 {
-	my $dbh = shift;
-	if ($dbh->FETCH('Warn')) {
-		warn 'Rollback ineffective while AutoCommit is on';
-	}
-	1;
+    my $dbh = shift;
+    if ($dbh->FETCH('Warn')) {
+        warn 'Rollback ineffective while AutoCommit is on';
+    }
+    1;
 }
 
 
 sub tables
 {
-	my $dbh = shift;
-	my @args = @_;
-	my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
+    my $dbh = shift;
+    my @args = @_;
+    my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
 
-	my @database_list;
-	eval {
-		$mysql->query('show tables');
-		die $mysql->get_error_message if $mysql->is_error;
-		if ($mysql->has_selected_record) {
-			my $record = $mysql->create_record_iterator;
-			while (my $db_name = $record->each) {
-				push @database_list, $db_name->[0];
-			}
-		}
-	};
-	if ($@) {
-		warn $mysql->get_error_message;
-	}
-	return $mysql->is_error
-		? undef
-		: @database_list;
+    my @database_list;
+    eval {
+        $mysql->query('show tables');
+        die $mysql->get_error_message if $mysql->is_error;
+        if ($mysql->has_selected_record) {
+            my $record = $mysql->create_record_iterator;
+            while (my $db_name = $record->each) {
+                push @database_list, $db_name->[0];
+            }
+        }
+    };
+    if ($@) {
+        warn $mysql->get_error_message;
+    }
+    return $mysql->is_error
+        ? undef
+        : @database_list;
 }
 
 
 sub _ListDBs
 {
-	my $dbh = shift;
-	my @args = @_;
-	my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
+    my $dbh = shift;
+    my @args = @_;
+    my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
 
-	my @database_list;
-	eval {
-		$mysql->query('show databases');
-		die $mysql->get_error_message if $mysql->is_error;
-		if ($mysql->has_selected_record) {
-			my $record = $mysql->create_record_iterator;
-			while (my $db_name = $record->each) {
-				push @database_list, $db_name->[0];
-			}
-		}
-	};
-	if ($@) {
-		warn $mysql->get_error_message;
-	}
-	return $mysql->is_error
-		? undef
-		: @database_list;
+    my @database_list;
+    eval {
+        $mysql->query('show databases');
+        die $mysql->get_error_message if $mysql->is_error;
+        if ($mysql->has_selected_record) {
+            my $record = $mysql->create_record_iterator;
+            while (my $db_name = $record->each) {
+                push @database_list, $db_name->[0];
+            }
+        }
+    };
+    if ($@) {
+        warn $mysql->get_error_message;
+    }
+    return $mysql->is_error
+        ? undef
+        : @database_list;
 }
 
 
 sub _ListTables
 {
-	my $dbh = shift;
-	return $dbh->tables;
+    my $dbh = shift;
+    return $dbh->tables;
 }
 
 
 sub disconnect
 {
-	return 1;
+    return 1;
 }
 
 
 sub FETCH
 {
-	my $dbh = shift;
-	my $key = shift;
+    my $dbh = shift;
+    my $key = shift;
 
-	return 1 if $key eq 'AutoCommit';
-	return $dbh->{$key} if $key =~ /^(?:mysqlpprawsjis_.*|thread_id|mysql_insertid)$/;
-	return $dbh->SUPER::FETCH($key);
+    return 1 if $key eq 'AutoCommit';
+    return $dbh->{$key} if $key =~ /^(?:mysqlpprawsjis_.*|thread_id|mysql_insertid)$/;
+    return $dbh->SUPER::FETCH($key);
 }
 
 
 sub STORE
 {
-	my $dbh = shift;
-	my ($key, $value) = @_;
+    my $dbh = shift;
+    my ($key, $value) = @_;
 
-	if ($key eq 'AutoCommit') {
-		die "Can't disable AutoCommit" unless $value;
-		return 1;
-	}
-	elsif ($key =~ /^(?:mysqlpprawsjis_.*|thread_id|mysql_insertid)$/) {
-		$dbh->{$key} = $value;
-		return 1;
-	}
-	return $dbh->SUPER::STORE($key, $value);
+    if ($key eq 'AutoCommit') {
+        die "Can't disable AutoCommit" unless $value;
+        return 1;
+    }
+    elsif ($key =~ /^(?:mysqlpprawsjis_.*|thread_id|mysql_insertid)$/) {
+        $dbh->{$key} = $value;
+        return 1;
+    }
+    return $dbh->SUPER::STORE($key, $value);
 }
 
 
 sub DESTROY
 {
-	my $dbh = shift;
-	my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
-	$mysql->close;
+    my $dbh = shift;
+    my $mysql = $dbh->FETCH('mysqlpprawsjis_connection');
+    $mysql->close;
 }
 
 
@@ -478,146 +478,146 @@ use strict;
 
 sub bind_param
 {
-	my $sth = shift;
-	my ($index, $value, $attr) = @_;
-	my $type = (ref $attr) ? $attr->{TYPE} : $attr;
-	if ($type) {
-		my $dbh = $sth->{Database};
-		$value = $dbh->quote($sth, $type);
-	}
-	my $params = $sth->FETCH('mysqlpprawsjis_param');
-	$params->[$index - 1] = $value;
+    my $sth = shift;
+    my ($index, $value, $attr) = @_;
+    my $type = (ref $attr) ? $attr->{TYPE} : $attr;
+    if ($type) {
+        my $dbh = $sth->{Database};
+        $value = $dbh->quote($sth, $type);
+    }
+    my $params = $sth->FETCH('mysqlpprawsjis_param');
+    $params->[$index - 1] = $value;
 }
 
 
 sub execute
 {
-	my $sth = shift;
-	my @bind_values = @_;
-	my $params = (@bind_values) ?
-		\@bind_values : $sth->FETCH('mysqlpprawsjis_params');
-	my $num_param = $sth->FETCH('NUM_OF_PARAMS');
-	if (@$params != $num_param) {
-		# ...
-	}
-	my $statement = $sth->{Statement};
+    my $sth = shift;
+    my @bind_values = @_;
+    my $params = (@bind_values) ?
+        \@bind_values : $sth->FETCH('mysqlpprawsjis_params');
+    my $num_param = $sth->FETCH('NUM_OF_PARAMS');
+    if (@$params != $num_param) {
+        # ...
+    }
+    my $statement = $sth->{Statement};
 
 # DBD::mysqlPPrawSjis (5 of 5)
-	if (1) {
-		my $dbh = $sth->{Database};
-		my @statement = ();
-		my $i = 0;
+    if (1) {
+        my $dbh = $sth->{Database};
+        my @statement = ();
+        my $i = 0;
 
-		# LIMIT m,n [Li][Ii][Mm][Ii][Tt] for ignorecase on ShiftJIS (Can't use /LIMIT/i)
-		# LIMIT n
-		# OFFSET m
+        # LIMIT m,n [Li][Ii][Mm][Ii][Tt] for ignorecase on ShiftJIS (Can't use /LIMIT/i)
+        # LIMIT n
+        # OFFSET m
 
-		while ($statement =~ /\G (
-			' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
-			" (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
-			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [?]    )                    |
-			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [0-9]+ \s* , \s* [?]    )                    |
-			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [0-9]+ )                    |
-			  (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] )                                        |
-			  (?: \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ [?] )                                    |
-			  (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
-		)/gsx) {
-			my $element = $1;
-			if (($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] \s* , \s* [?] \z/x) and
-				exists $params->[$i+1] and
-				($params->[$i+0] =~ /^[0-9]+$/) and
-				($params->[$i+1] =~ /^[0-9]+$/)
-			) {
-				$element =~ s{[?]}{$params->[$i++]}e;
-				$element =~ s{[?]}{$params->[$i++]}e;
-				push @statement, $element;
-			}
-			elsif (
-				($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ /x) and
-				exists $params->[$i] and
-				($params->[$i] =~ /^[0-9]+$/)
-			) {
-				$element =~ s{[?]}{$params->[$i++]}e;
-				push @statement, $element;
-			}
-			elsif (
-				($element =~ /\A \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ /x) and
-				exists $params->[$i] and
-				($params->[$i] =~ /^[0-9]+$/)
-			) {
-				$element =~ s{[?]}{$params->[$i++]}e;
-				push @statement, $element;
-			}
-			elsif (($element eq '?') and exists $params->[$i]) {
-				push @statement, $dbh->quote($params->[$i++]);
-			}
-			else {
-				push @statement, $element;
-			}
-		}
-		$statement = join '', @statement;
-	}
-	else {
-		for (my $i = 0; $i < $num_param; $i++) {
-			my $dbh = $sth->{Database};
-			my $quoted_param = $dbh->quote($params->[$i]);
-			$statement =~ s/\?/$quoted_param/e;
-		}
-	}
+        while ($statement =~ /\G (
+            ' (?: '' | \\' | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC'] )*? ' |
+            " (?: "" | \\" | [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [^\x81-\x9F\xE0-\xFC"] )*? " |
+              (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [?]    )                    |
+              (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [0-9]+ \s* , \s* [?]    )                    |
+              (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?]    \s* , \s* [0-9]+ )                    |
+              (?: \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] )                                        |
+              (?: \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ [?] )                                    |
+              (?:            [\x81-\x9F\xE0-\xFC][\x00-\xFF] | [\x00-\xFF] )
+        )/gsx) {
+            my $element = $1;
+            if (($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ [?] \s* , \s* [?] \z/x) and
+                defined($params->[$i+1]) and
+                ($params->[$i+0] =~ /^[0-9]+$/) and
+                ($params->[$i+1] =~ /^[0-9]+$/)
+            ) {
+                $element =~ s{[?]}{$params->[$i++]}e;
+                $element =~ s{[?]}{$params->[$i++]}e;
+                push @statement, $element;
+            }
+            elsif (
+                ($element =~ /\A \s+ [Ll][Ii][Mm][Ii][Tt] \s+ /x) and
+                defined($params->[$i]) and
+                ($params->[$i] =~ /^[0-9]+$/)
+            ) {
+                $element =~ s{[?]}{$params->[$i++]}e;
+                push @statement, $element;
+            }
+            elsif (
+                ($element =~ /\A \s+ [Oo][Ff][Ff][Ss][Ee][Tt] \s+ /x) and
+                defined($params->[$i]) and
+                ($params->[$i] =~ /^[0-9]+$/)
+            ) {
+                $element =~ s{[?]}{$params->[$i++]}e;
+                push @statement, $element;
+            }
+            elsif (($element eq '?') and defined($params->[$i])) {
+                push @statement, $dbh->quote($params->[$i++]);
+            }
+            else {
+                push @statement, $element;
+            }
+        }
+        $statement = join '', @statement;
+    }
+    else {
+        for (my $i = 0; $i < $num_param; $i++) {
+            my $dbh = $sth->{Database};
+            my $quoted_param = $dbh->quote($params->[$i]);
+            $statement =~ s/\?/$quoted_param/e;
+        }
+    }
 
 # for debug DBD::mysqlPPrawSjis
-	if (0) {
-		open(QUERY,'>>query.log');
-		my($year,$month,$day,$hour,$min,$sec) = (localtime)[5,4,3,2,1,0];
-		printf QUERY ("-- %04d-%02d-%02d %02d:%02d:%02d\n", 1900+$year,$month+1,$day,$hour,$min,$sec);
-		print QUERY $statement, "\n";
-		close(QUERY);
-	}
+    if (0) {
+        open(QUERY,'>>query.log');
+        my($year,$month,$day,$hour,$min,$sec) = (localtime)[5,4,3,2,1,0];
+        printf QUERY ("-- %04d-%02d-%02d %02d:%02d:%02d\n", 1900+$year,$month+1,$day,$hour,$min,$sec);
+        print QUERY $statement, "\n";
+        close(QUERY);
+    }
 
-	my $mysql = $sth->FETCH('mysqlpprawsjis_handle');
-	my $result = eval {
-		$sth->{mysqlpprawsjis_record_iterator} = undef;
-		$mysql->query($statement);
-		die if $mysql->is_error;
+    my $mysql = $sth->FETCH('mysqlpprawsjis_handle');
+    my $result = eval {
+        $sth->{mysqlpprawsjis_record_iterator} = undef;
+        $mysql->query($statement);
+        die if $mysql->is_error;
 
-		my $dbh = $sth->{Database};
-		$dbh->STORE(mysqlpprawsjis_insertid => $mysql->get_insert_id);
-		$dbh->STORE(mysql_insertid => $mysql->get_insert_id);
+        my $dbh = $sth->{Database};
+        $dbh->STORE(mysqlpprawsjis_insertid => $mysql->get_insert_id);
+        $dbh->STORE(mysql_insertid => $mysql->get_insert_id);
 
-		$sth->{mysqlpprawsjis_rows} = $mysql->get_affected_rows_length;
-		if ($mysql->has_selected_record) {
-			my $record = $mysql->create_record_iterator;
-			$sth->{mysqlpprawsjis_record_iterator} = $record;
-			$sth->STORE(NUM_OF_FIELDS => $record->get_field_length);
-			$sth->STORE(NAME => [ $record->get_field_names ]);
-		}
-		$mysql->get_affected_rows_length;
-	};
-	if ($@) {
-		$sth->DBI::set_err(
-			$mysql->get_error_code, $mysql->get_error_message
-		);
-		return undef;
-	}
+        $sth->{mysqlpprawsjis_rows} = $mysql->get_affected_rows_length;
+        if ($mysql->has_selected_record) {
+            my $record = $mysql->create_record_iterator;
+            $sth->{mysqlpprawsjis_record_iterator} = $record;
+            $sth->STORE(NUM_OF_FIELDS => $record->get_field_length);
+            $sth->STORE(NAME => [ $record->get_field_names ]);
+        }
+        $mysql->get_affected_rows_length;
+    };
+    if ($@) {
+        $sth->DBI::set_err(
+            $mysql->get_error_code, $mysql->get_error_message
+        );
+        return undef;
+    }
 
-	return $mysql->is_error
-		? undef : $result
-			? $result : '0E0';
+    return $mysql->is_error
+        ? undef : $result
+            ? $result : '0E0';
 }
 
 
 sub fetch
 {
-	my $sth = shift;
+    my $sth = shift;
 
-	my $iterator = $sth->FETCH('mysqlpprawsjis_record_iterator');
-	my $row = $iterator->each;
-	return undef unless $row;
+    my $iterator = $sth->FETCH('mysqlpprawsjis_record_iterator');
+    my $row = $iterator->each;
+    return undef unless $row;
 
-	if ($sth->FETCH('ChopBlanks')) {
-		map {s/\s+$//} @$row;
-	}
-	return $sth->_set_fbav($row);
+    if ($sth->FETCH('ChopBlanks')) {
+        map {s/\s+$//} @$row;
+    }
+    return $sth->_set_fbav($row);
 }
 use vars qw(*fetchrow_arrayref);
 *fetchrow_arrayref = \&fetch;
@@ -625,47 +625,47 @@ use vars qw(*fetchrow_arrayref);
 
 sub rows
 {
-	my $sth = shift;
-	$sth->FETCH('mysqlpprawsjis_rows');
+    my $sth = shift;
+    $sth->FETCH('mysqlpprawsjis_rows');
 }
 
 
 sub FETCH
 {
-	my $dbh = shift;
-	my $key = shift;
+    my $dbh = shift;
+    my $key = shift;
 
-	return 1 if $key eq 'AutoCommit';
-	return $dbh->{NAME} if $key eq 'NAME';
-	return $dbh->{$key} if $key =~ /^mysqlpprawsjis_/;
-	return $dbh->SUPER::FETCH($key);
+    return 1 if $key eq 'AutoCommit';
+    return $dbh->{NAME} if $key eq 'NAME';
+    return $dbh->{$key} if $key =~ /^mysqlpprawsjis_/;
+    return $dbh->SUPER::FETCH($key);
 }
 
 
 sub STORE
 {
-	my $dbh = shift;
-	my ($key, $value) = @_;
+    my $dbh = shift;
+    my ($key, $value) = @_;
 
-	if ($key eq 'AutoCommit') {
-		die "Can't disable AutoCommit" unless $value;
-		return 1;
-	}
-	elsif ($key eq 'NAME') {
-		$dbh->{NAME} = $value;
-		return 1;
-	}
-	elsif ($key =~ /^mysqlpprawsjis_/) {
-		$dbh->{$key} = $value;
-		return 1;
-	}
-	return $dbh->SUPER::STORE($key, $value);
+    if ($key eq 'AutoCommit') {
+        die "Can't disable AutoCommit" unless $value;
+        return 1;
+    }
+    elsif ($key eq 'NAME') {
+        $dbh->{NAME} = $value;
+        return 1;
+    }
+    elsif ($key =~ /^mysqlpprawsjis_/) {
+        $dbh->{$key} = $value;
+        return 1;
+    }
+    return $dbh->SUPER::STORE($key, $value);
 }
 
 
 sub DESTROY
 {
-	my $dbh = shift;
+    my $dbh = shift;
 }
 
 
@@ -753,20 +753,20 @@ statement handles. Perl returns a database handle to the connect
 method like so:
 
   $dbh = DBI->connect("dbi:mysqlPPrawSjis:database=$db;host=$host",
-		      $user, $password, {RaiseError => 1});
+              $user, $password, {RaiseError => 1});
 
 Once you have connected to a database, you can can execute SQL
 statements with:
 
   my $query = sprintf("INSERT INTO foo VALUES (%d, %s)",
-		      $number, $dbh->quote("name"));
+              $number, $dbh->quote("name"));
   $dbh->do($query);
 
 See L<DBI(3)> for details on the quote and do methods. An alternative
 approach is
 
   $dbh->do("INSERT INTO foo VALUES (?, ?)", undef,
-	   $number, $name);
+       $number, $name);
 
 in which case the quote method is executed automatically. See also
 the bind_param method in L<DBI(3)>. See L<DATABASE HANDLES> below
